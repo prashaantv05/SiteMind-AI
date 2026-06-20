@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SiteMind AI - Authentication</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .auth-wrapper {
+            perspective: 1000px;
+            width: 100%;
+            max-width: 420px;
+            z-index: 10;
+        }
+
+        .flip-inner {
+            position: relative;
+            width: 100%;
+            /* Fixed height so both sides fit without jumping */
+            min-height: 540px; 
+            transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            transform-style: preserve-3d;
+        }
+
+        /* The class we toggle with JS */
+        .flip-inner.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        /* Both Front (Login) and Back (Register) */
+        .auth-view {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 3.5rem 3rem;
+            /* Using the glass-panel styling from our main CSS */
+            background: var(--bg-surface);
+            border: var(--panel-border);
+            border-top: 1px solid rgba(255,255,255,0.05);
+            border-radius: 20px;
+            box-shadow: var(--outer-shadow);
+        }
+
+        /* Register is on the back, so we pre-rotate it 180deg */
+        .auth-view.register-side {
+            transform: rotateY(180deg);
+        }
+
+        /* --- Internal Styling --- */
+        .auth-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1rem;
+        }
+        
+        .auth-logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--brand-gradient);
+            color: #000;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(212, 175, 55, 0.4), inset 0 1px 2px rgba(255,255,255,0.8);
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            text-align: center;
+            font-size: 1.05rem;
+        }
+
+        form { width: 100%; }
+
+        .input-group {
+            width: 100%;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.6rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1.2rem;
+            top: 2.6rem;
+            color: var(--text-muted);
+            transition: color 0.3s;
+        }
+
+        .input-group input {
+            width: 100%;
+            background: #0f0f0f;
+            border: 1px solid #222;
+            border-top: 1px solid #333;
+            border-radius: 12px;
+            padding: 1.1rem 1rem 1.1rem 3.2rem;
+            color: var(--text-primary);
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.8);
+        }
+        
+        .input-group:focus-within .input-icon {
+            color: var(--gold-mid);
+        }
+
+        .input-group input:focus {
+            border-color: var(--gold-mid);
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.8), 0 0 15px rgba(212, 175, 55, 0.15);
+        }
+
+        .auth-btn {
+            width: 100%;
+            margin-top: 0.5rem;
+            padding: 1.1rem;
+            font-size: 1.1rem;
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
+        .auth-switch a {
+            color: var(--gold-mid);
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        .auth-switch a:hover {
+            color: var(--gold-light);
+        }
+
+        .flash {
+            width: 100%;
+            padding: 0.8rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="auth-body">
+    <!-- Animated Particle Background -->
+    <div class="particles-container"></div>
+
+    <div class="auth-wrapper">
+        <!-- We use 'is_register' from Python to determine the initial flip state -->
+        <div class="flip-inner {% if is_register %}is-flipped{% endif %}" id="flipContainer">
+            
+            <!-- FRONT: LOGIN -->
+            <div class="auth-view login-side">
+                <div class="auth-logo">
+                    <div class="auth-logo-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+                            <path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>
+                        </svg>
+                    </div>
+                    <span class="logo-text" style="font-size: 1.5rem;">SiteMind AI</span>
+                </div>
+                
+                <p class="subtitle">Welcome back!</p>
+                
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages and not is_register %}
+                    <div class="flashes" style="width: 100%;">
+                    {% for category, message in messages %}
+                      <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                    </div>
+                  {% endif %}
+                {% endwith %}
+
+                <form method="POST" action="/login">
+                    <div class="input-group">
+                        <label>Username</label>
+                        <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        <input type="text" name="username" required placeholder="Enter your username">
+                    </div>
+                    <div class="input-group">
+                        <label>Password</label>
+                        <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        <input type="password" name="password" required placeholder="Enter your password">
+                    </div>
+                    <button type="submit" class="gradient-btn auth-btn">Sign In</button>
+                </form>
+                
+                <p class="auth-switch">
+                    Don't have an account? <a onclick="triggerFlip(true)">Sign up</a>
+                </p>
+            </div>
+
+            <!-- BACK: REGISTER -->
+            <div class="auth-view register-side">
+                <div class="auth-logo">
+                    <div class="auth-logo-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+                            <path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>
+                        </svg>
+                    </div>
+                    <span class="logo-text" style="font-size: 1.5rem;">SiteMind AI</span>
+                </div>
+                
+                <p class="subtitle">Create a new account</p>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages and is_register %}
+                    <div class="flashes" style="width: 100%;">
+                    {% for category, message in messages %}
+                      <div class="flash {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                    </div>
+                  {% endif %}
+                {% endwith %}
+
+                <form method="POST" action="/register">
+                    <div class="input-group">
+                        <label>Username</label>
+                        <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        <input type="text" name="username" required placeholder="Choose a username">
+                    </div>
+                    <div class="input-group">
+                        <label>Password</label>
+                        <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        <input type="password" name="password" required placeholder="Choose a secure password">
+                    </div>
+                    <button type="submit" class="gradient-btn auth-btn">Create Account</button>
+                </form>
+                
+                <p class="auth-switch">
+                    Already have an account? <a onclick="triggerFlip(false)">Log in</a>
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function triggerFlip(toRegister) {
+            const container = document.getElementById('flipContainer');
+            if (toRegister) {
+                container.classList.add('is-flipped');
+                history.pushState(null, '', '/register');
+            } else {
+                container.classList.remove('is-flipped');
+                history.pushState(null, '', '/login');
+            }
+        }
+
+        // Particle System
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.querySelector('.particles-container');
+            if (!container) return;
+            
+            for(let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                const size = Math.random() * 4 + 2;
+                const left = Math.random() * 100;
+                const duration = Math.random() * 10 + 15;
+                const delay = Math.random() * 10;
+                
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${left}%`;
+                particle.style.animationDuration = `${duration}s`;
+                particle.style.animationDelay = `${delay}s`;
+                
+                container.appendChild(particle);
+            }
+        });
+    </script>
+</body>
+</html>

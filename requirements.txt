@@ -1,0 +1,9 @@
+requests
+beautifulsoup4
+langchain-text-splitters
+langchain-google-genai
+faiss-cpu
+python-dotenv
+flask
+flask-sqlalchemy
+flask-login
