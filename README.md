@@ -1,6 +1,6 @@
 # SiteMind AI 🧠✨
 
-SiteMind AI is a highly professional, full-stack **Retrieval-Augmented Generation (RAG)** web application that allows users to instantly chat with the contents of any website. 
+SiteMind AI is a simple, full-stack **Retrieval-Augmented Generation (RAG)** web application that allows users to instantly chat with the contents of any website. 
 
 By pasting a URL, the system dynamically scrapes, processes, and embeds the website's text into a local vector database. Users can then ask highly specific questions, and the AI will answer accurately using *only* the retrieved context from the website, completely eliminating AI hallucinations.
 
