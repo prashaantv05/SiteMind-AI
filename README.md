@@ -22,48 +22,34 @@ By pasting a URL, the system dynamically scrapes, processes, and embeds the webs
 
 ```mermaid
 graph TD
-    %% Frontend Components
-    subgraph Client ["Frontend (Client Browser)"]
-        UI["Neumorphic UI (HTML/CSS/JS)"]
-    end
-
-    %% Backend Components
-    subgraph Server ["Flask Backend Server"]
-        Router["API Router (Flask)"]
-        Auth["Auth System (SQLite DB)"]
-        Session["Session & History Management"]
-    end
-
-    %% RAG Pipeline
-    subgraph RAG ["RAG Pipeline (LangChain)"]
-        Scraper["Data Ingestion (BeautifulSoup)"]
-        Splitter["Text Splitter (LangChain)"]
-        Embedder["Embedding Model (Gemini)"]
-        VectorDB[("FAISS Vector DB (Per-User)")]
-        Retriever["Context Retriever"]
-        LLM["Generative LLM (Gemini)"]
-    end
-
-    %% External
-    Web["Target Website (URL)"]
-
-    %% Flow
-    UI -- "1. Submits URL" --> Router
-    Router -- "Authenticates" --> Auth
-    Router -- "2. Triggers Pipeline" --> Scraper
-    Scraper -- "Fetches HTML" --> Web
-    Web -- "Raw Text" --> Scraper
-    Scraper -- "Parsed Text" --> Splitter
-    Splitter -- "Text Chunks" --> Embedder
-    Embedder -- "Vectors" --> VectorDB
+    User(("User"))
+    Web["Target Website"]
     
-    UI -- "3. Asks Question" --> Router
-    Router -- "Query" --> Retriever
-    Retriever -- "Similarity Search" --> VectorDB
-    VectorDB -- "Top-K Chunks" --> Retriever
-    Retriever -- "Context + Prompt" --> LLM
-    LLM -- "Generated Answer" --> Router
-    Router -- "JSON Response" --> UI
+    subgraph "1. Data Ingestion Pipeline"
+        Scraper["HTML Scraper (BeautifulSoup)"]
+        Splitter["Text Chunking (LangChain)"]
+        Embedder["Embedding Model (Gemini)"]
+        VectorDB[("FAISS Vector DB")]
+    end
+
+    subgraph "2. Retrieval-Augmented Generation"
+        Retriever["Similarity Search"]
+        Prompt["Strict Context Prompt"]
+        LLM["Gemini LLM"]
+    end
+
+    %% Ingestion Flow
+    Web -->|"Extract Text"| Scraper
+    Scraper -->|"Clean Data"| Splitter
+    Splitter -->|"Text Chunks"| Embedder
+    Embedder -->|"Vector Embeddings"| VectorDB
+
+    %% Query Flow
+    User -->|"Asks Question"| Retriever
+    Retriever -->|"Searches"| VectorDB
+    VectorDB -->|"Top Context Matches"| Prompt
+    Prompt -->|"Context + Question"| LLM
+    LLM -->|"Accurate Answer"| User
 ```
 
 ## 🚀 Local Installation & Setup
