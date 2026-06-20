@@ -52,6 +52,11 @@ graph TD
     LLM -->|"Accurate Answer"| User
 ```
 
+## ⚠️ Limitations & Scope
+While SiteMind AI is highly effective for processing documentation, public articles, company blogs, and wikis, it relies on standard HTTP requests to fetch website content. 
+*   **Security Blocks:** Some highly-secured websites or platforms with aggressive anti-bot protections (like Cloudflare, Captchas, or certain paywalls) may block the automated scraper. 
+*   **Dynamic Client-Side Rendering:** Websites that rely entirely on JavaScript to render text (Single Page Applications without SSR) may not be fully parsed by the current BeautifulSoup implementation.
+
 ## 🚀 Local Installation & Setup
 
 1. **Clone the repository**
