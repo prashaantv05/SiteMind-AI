@@ -19,7 +19,6 @@ LLM_TEMPERATURE = 0.0
 
 # --- File Paths ---
 FAISS_CACHE_PATH = "faiss_cache"
-URLS_FILE_PATH = "urls.txt"
 
 # --- Text Splitting Configurations ---
 # The maximum number of characters per text chunk
