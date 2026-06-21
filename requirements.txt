@@ -8,3 +8,6 @@ flask
 flask-sqlalchemy
 flask-login
 playwright
+langchain
+langchain-core
+langchain-community
