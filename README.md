@@ -1,12 +1,12 @@
 # SiteMind AI 🧠✨
 
-SiteMind AI is a simple, full-stack **Retrieval-Augmented Generation (RAG)** web application that allows users to instantly chat with the contents of any website. 
+SiteMind AI is a simple, **Retrieval-Augmented Generation (RAG)** web application that allows users to instantly chat with the contents of any website. 
 
 By pasting a URL, the system dynamically scrapes, processes, and embeds the website's text into a local vector database. Users can then ask highly specific questions, and the AI will answer accurately using *only* the retrieved context from the website, completely eliminating AI hallucinations.
 
 ## ✨ Features
 *   **Playwright Headless Browsing:** Spawns an invisible Chromium browser to execute JavaScript and perfectly scrape modern Single Page Applications (React, Next.js, Angular).
-*   **Advanced RAG Pipeline:** Uses LangChain for intelligent semantic text chunking.
+*   **RAG Pipeline:** Uses LangChain for intelligent semantic text chunking.
 *   **Vector Caching:** Utilizes Facebook's FAISS for lightning-fast similarity search and local vector storage.
 *   **Conversational Memory:** Remembers the context of previous messages, allowing users to ask natural follow-up questions.
 *   **Real-Time SSE Streaming:** Answers are streamed to the frontend word-by-word instantly, mimicking the premium UX of ChatGPT.
