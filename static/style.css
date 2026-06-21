@@ -621,3 +621,44 @@ body {
         margin-top: 0.5rem;
     }
 }
+
+/* --- MARKDOWN STYLES --- */
+.message-text p {
+    margin-bottom: 1rem;
+}
+.message-text p:last-child {
+    margin-bottom: 0;
+}
+.message-text strong {
+    color: var(--gold-light);
+    font-weight: 700;
+}
+.message-text ul, .message-text ol {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+.message-text li {
+    margin-bottom: 0.4rem;
+}
+.message-text code {
+    background: rgba(255,255,255,0.08);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9em;
+    color: var(--gold-light);
+}
+.message-text pre {
+    background: rgba(0,0,0,0.4);
+    padding: 1rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+    /* Neumorphic inset for code blocks */
+    box-shadow: inset 2px 2px 8px rgba(0,0,0,0.8);
+}
+.message-text pre code {
+    background: transparent;
+    padding: 0;
+    color: #e5e5e5;
+}

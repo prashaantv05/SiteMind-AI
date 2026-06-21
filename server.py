@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, Response, stream_with_context
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from database import db, User, Chat, Message
 import config
@@ -139,26 +139,42 @@ def send_message(chat_id):
     if chat.user_id != current_user.id:
         return jsonify({"error": "Unauthorized"}), 403
         
-    # 1. Save user's message to DB
+    # 1. Fetch Chat History (last 6 messages so the LLM remembers context)
+    recent_messages = Message.query.filter_by(chat_id=chat.id).order_by(Message.created_at.asc()).limit(6).all()
+    chat_history_str = ""
+    for m in recent_messages:
+        role_name = "User" if m.role == "user" else "AI"
+        chat_history_str += f"{role_name}: {m.content}\n\n"
+        
+    # 2. Save new user's message to DB
     msg_user = Message(chat_id=chat.id, role='user', content=user_message)
     db.session.add(msg_user)
+    db.session.commit()
     
-    # 2. Retrieve context from FAISS
+    # 3. Retrieve context from FAISS
     vector_store = load_vector_store(embeddings_model, chat.id)
     if not vector_store:
         return jsonify({"error": "Database not found for this chat."}), 404
         
     context = search_vector_store(vector_store, user_message)
     
-    # 3. Generate Answer using Gemini
-    answer = generate_answer(user_message, context, llm)
-    
-    # 4. Save bot's answer to DB
-    msg_bot = Message(chat_id=chat.id, role='bot', content=answer)
-    db.session.add(msg_bot)
-    db.session.commit()
-    
-    return jsonify({"answer": answer})
+    # 4. Generate Stream
+    def generate():
+        full_answer = ""
+        # stream_with_context ensures we can still access the db inside this generator
+        for chunk in generate_answer(user_message, context, chat_history_str, llm):
+            full_answer += chunk
+            # Yield Server-Sent Events (SSE) format
+            # We replace newlines because SSE uses \n\n to delimit messages
+            safe_chunk = chunk.replace('\n', '<br>')
+            yield f"data: {safe_chunk}\n\n"
+            
+        # 5. After stream is finished, save the bot's full answer to DB
+        msg_bot = Message(chat_id=chat.id, role='bot', content=full_answer)
+        db.session.add(msg_bot)
+        db.session.commit()
+        
+    return Response(stream_with_context(generate()), mimetype='text/event-stream')
 
 if __name__ == "__main__":
     with app.app_context():

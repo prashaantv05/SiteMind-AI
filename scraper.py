@@ -1,52 +1,33 @@
-import requests
 from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
 def scrape_webpage(url: str) -> BeautifulSoup:
     """
-    Fetches the content of a webpage and parses it into a BeautifulSoup object.
-    Includes robust error handling for various network failures.
-    
-    Args:
-        url (str): The web address to scrape.
-        
-    Returns:
-        BeautifulSoup: A parsed representation of the HTML document, or None if it fails.
+    Fetches the content of a webpage using a headless Chromium browser
+    and parses it into a BeautifulSoup object. This allows us to read
+    modern JavaScript-heavy websites (React, Next.js, etc).
     """
-    print(f"Fetching URL: {url}")
+    print(f"Fetching URL with Headless Browser: {url}")
     try:
-        # We use a User-Agent header so the website doesn't block us thinking we're a spam bot.
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        }
-        
-        # Make an HTTP GET request to download the page content. We also set a 10-second timeout.
-        response = requests.get(url, headers=headers, timeout=10)
-        
-        # Raise an exception if the server returned an error (like 404 Not Found or 500 Internal Error)
-        response.raise_for_status()
-        
-        # Robust check: Make sure the URL actually returned an HTML webpage, not a PDF or an Image.
-        content_type = response.headers.get('Content-Type', '')
-        if 'text/html' not in content_type:
-            print(f" -> Warning: Expected HTML but got '{content_type}'. This URL might be a file or image.")
-            return None
+        with sync_playwright() as p:
+            # Launch Chromium in headless mode
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
             
-        # Parse the raw HTML text into a structured BeautifulSoup object
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        return soup
-
-    # Catch specific network errors so we can tell the user exactly what went wrong
-    except requests.exceptions.Timeout:
+            # Navigate to the URL and wait for all network traffic (Javascript, APIs) to finish
+            page.goto(url, wait_until="networkidle", timeout=20000)
+            
+            # Grab the fully rendered HTML
+            html_content = page.content()
+            browser.close()
+            
+            # Parse it with BeautifulSoup
+            soup = BeautifulSoup(html_content, 'html.parser')
+            return soup
+            
+    except PlaywrightTimeoutError:
         print(f" -> Error: The connection timed out while trying to reach '{url}'. The website is too slow.")
-    except requests.exceptions.HTTPError as e:
-        print(f" -> Error: The website returned an HTTP error (e.g., 404 or 403 Forbidden): {e}")
-    except requests.exceptions.ConnectionError:
-        print(f" -> Error: Failed to connect. Is the URL typed correctly? '{url}'")
-    except requests.exceptions.MissingSchema:
-        print(f" -> Error: Invalid URL format. Did you forget 'http://' or 'https://' for '{url}'?")
-    except requests.exceptions.RequestException as e:
-        # Catch-all for any other network issues
+    except Exception as e:
         print(f" -> Error: An unexpected error occurred while scraping '{url}': {e}")
         
     # If any error occurred, we return None so the main app knows to skip this URL

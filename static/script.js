@@ -176,29 +176,88 @@ document.addEventListener('DOMContentLoaded', () => {
         messageInput.value = '';
         messageInput.style.height = 'auto'; // Reset height
         
-        // 2. Show a temporary "typing..." indicator
-        const typingId = appendMessage('bot', '...', true);
+        // 2. Create the bot message container and show "Thinking..."
+        const botMsgId = appendMessage('bot', '<span class="typing-indicator">Thinking...</span>');
+        const botMsgTextDiv = document.getElementById(botMsgId).querySelector('.message-text');
         
-        // 3. Send to API
+        // 3. Send to API and stream response
         try {
             const res = await fetch(`/api/chat/${currentChatId}/message`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: text })
             });
-            const data = await res.json();
             
-            // Remove typing indicator
-            document.getElementById(typingId).remove();
-            
-            if (res.ok && data.answer) {
-                appendMessage('bot', data.answer);
-            } else {
-                appendMessage('bot', "Error: " + (data.error || "Failed to generate answer."));
+            if (!res.ok) {
+                const errData = await res.json();
+                botMsgTextDiv.innerHTML = "Error: " + (errData.error || "Failed to generate answer.");
+                return;
+            }
+
+            // Set up stream reader
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            let done = false;
+            let firstChunkReceived = false;
+
+            // Typewriter effect variables
+            let charQueue = "";
+            let isTyping = false;
+            let fullMessageText = "";
+
+            function processQueue() {
+                if (charQueue.length > 0) {
+                    // Check if the next sequence is a <br> tag
+                    if (charQueue.startsWith('<br>')) {
+                        fullMessageText += '\n';
+                        charQueue = charQueue.substring(4);
+                    } else {
+                        fullMessageText += charQueue[0];
+                        charQueue = charQueue.substring(1);
+                    }
+                    
+                    // Render using the professional marked.js library
+                    botMsgTextDiv.innerHTML = marked.parse(fullMessageText);
+                    
+                    // Keep scrolled to bottom
+                    messagesContainer.scrollTo({
+                        top: messagesContainer.scrollHeight,
+                        behavior: 'smooth'
+                    });
+
+                    // Fast typing speed (10ms)
+                    setTimeout(processQueue, 15);
+                } else {
+                    isTyping = false;
+                }
+            }
+
+            while (!done) {
+                const { value, done: readerDone } = await reader.read();
+                done = readerDone;
+                if (value) {
+                    const chunkStr = decoder.decode(value, { stream: true });
+                    const lines = chunkStr.split('\n\n');
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            if (!firstChunkReceived) {
+                                botMsgTextDiv.innerHTML = ""; // Clear "Thinking..."
+                                firstChunkReceived = true;
+                            }
+                            
+                            const payload = line.replace('data: ', '');
+                            charQueue += payload;
+                            
+                            if (!isTyping) {
+                                isTyping = true;
+                                processQueue();
+                            }
+                        }
+                    }
+                }
             }
         } catch (e) {
-            document.getElementById(typingId).remove();
-            appendMessage('bot', "Network error. Please try again.");
+            botMsgTextDiv.innerHTML = "Network error. Please try again.";
         }
     }
 

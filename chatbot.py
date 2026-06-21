@@ -9,13 +9,16 @@ load_dotenv()
 
 # This is the strict set of rules we are giving to Gemini.
 # By providing the context and the question here, Gemini knows exactly what to read.
-PROMPT_TEMPLATE = """You are a helpful, conversational AI assistant.
+PROMPT_TEMPLATE = """You are a highly knowledgeable but incredibly friendly, casual, and conversational AI assistant. You should talk to the user like they are your close friend. Use a warm, enthusiastic tone, keep things relatively concise, and don't be afraid to use an occasional emoji!
 
 Your primary goal is to answer questions based strictly on the provided Context from the indexed website. 
 
-However, if the user asks a general knowledge question (e.g., "What is AI?", "Explain quantum physics") or a casual greeting (e.g., "hello", "hi"), you should:
-1. Politely state that the specific information isn't in the provided website context (skip this for simple greetings).
-2. Go ahead and answer the question anyway using your own general knowledge.
+However, if the user asks a general knowledge question or a casual greeting, you should:
+1. Politely and casually mention that the specific info isn't in the website context (skip this for simple greetings).
+2. Go ahead and answer the question anyway using your own general knowledge, keeping the friendly and helpful vibe.
+
+Recent Chat History:
+{chat_history}
 
 Context:
 {context}
@@ -37,23 +40,26 @@ def get_gemini_llm() -> ChatGoogleGenerativeAI:
     )
     return llm
 
-def generate_answer(query: str, context: str, llm: ChatGoogleGenerativeAI) -> str:
-    """Generates an answer based on the provided context."""
+def generate_answer(query: str, context: str, chat_history: str, llm: ChatGoogleGenerativeAI):
+    """Generates an answer using streaming output and conversation history."""
     if not context or not context.strip():
-        return "I couldn't find that information on the indexed website."
+        yield "I couldn't find that information on the indexed website."
+        return
         
     prompt = PromptTemplate(
         template=PROMPT_TEMPLATE,
-        input_variables=["context", "question"]
+        input_variables=["chat_history", "context", "question"]
     )
     
-    final_prompt = prompt.format(context=context, question=query)
+    final_prompt = prompt.format(chat_history=chat_history, context=context, question=query)
     
     try:
-        response = llm.invoke(final_prompt)
-        return response.content
+        # We use .stream() instead of .invoke() so we can yield word-by-word
+        for chunk in llm.stream(final_prompt):
+            if chunk.content:
+                yield chunk.content
     except Exception as e:
-        return f"Error communicating with Gemini LLM: {e}"
+        yield f"Error communicating with Gemini LLM: {e}"
 
 # Simple test block
 if __name__ == "__main__":
