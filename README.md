@@ -67,13 +67,10 @@ While SiteMind AI is highly effective for processing modern dynamic web apps, do
    ```
 
 2. **Set up your API Key**
-   You will need a Google Gemini API key. Set it as an environment variable in your terminal:
+   You will need a free Google Gemini API key (get one at Google AI Studio).
+   Rename the `.env.example` file to `.env` and paste your key inside:
    ```bash
-   # Windows
-   set GOOGLE_API_KEY="your_api_key_here"
-   
-   # Mac/Linux
-   export GOOGLE_API_KEY="your_api_key_here"
+   GEMINI_API_KEY="your_api_key_here"
    ```
 
 3. **Install Dependencies**
